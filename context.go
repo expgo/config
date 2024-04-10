@@ -23,7 +23,7 @@ func (c *context) GetConfig(filename string, path string, cfg any) error {
 	fileMap, cerr := c.fileContents.GetOrLoad(fn, func(absFilename string) (map[string]any, error) {
 		// Load absFilename and parse it into map[string]any using the yml library
 		buf, err := os.ReadFile(absFilename)
-		if err != nil {
+		if err != nil && !os.IsNotExist(err) {
 			return nil, err
 		}
 
