@@ -2,7 +2,7 @@ package config
 
 import (
 	"errors"
-	"github.com/expgo/generic"
+	"github.com/expgo/factory"
 	"gopkg.in/yaml.v3"
 	"os"
 )
@@ -10,13 +10,9 @@ import (
 type Config interface {
 }
 
-type context struct {
-	fileConfigs  generic.Map[string, []Config]
-	fileContents generic.Cache[string, string]
-}
-
 var _defaultConfigFileName = "app.yml"
 
+// SetDefault if file not exists, create file by cfg struct, then set file to default config file
 func SetDefault(filename string, cfg any) error {
 	if len(filename) == 0 {
 		return errors.New("filename must not be empty")
@@ -53,17 +49,15 @@ func SetDefaultFilename(filename string) error {
 	return nil
 }
 
-// SetDefaultConfig if file not exists, create file by cfg struct, then set file to default config file
-func SetDefaultConfig[T Config](filename string, cfg *T) error {
-	return SetDefault(filename, cfg)
-}
-
 // New create config with default config file
-func New[T Config](path string) *T {
-	//t := factory.New[T]()
-	return nil
+func New[T Config](path string) (*T, error) {
+	cfg := factory.New[T]()
+	err := __context.GetConfig(_defaultConfigFileName, path, cfg)
+	return cfg, err
 }
 
-func NewWithFile[T Config](filename string, path string) *T {
-	return nil
+func NewWithFile[T Config](filename string, path string) (*T, error) {
+	cfg := factory.New[T]()
+	err := __context.GetConfig(filename, path, cfg)
+	return cfg, err
 }
