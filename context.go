@@ -8,7 +8,10 @@ import (
 	"sync"
 )
 
-var __context = &context{}
+var __context = &context{
+	fileConfigs:  map[string][]Config{},
+	fileContents: map[string]map[string]any{},
+}
 
 type context struct {
 	fileConfigs      map[string][]Config
