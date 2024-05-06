@@ -1,47 +1,67 @@
 package config
 
 import (
-	"github.com/expgo/generic"
 	"github.com/expgo/structure"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
-// @Singleton(localVar)
+var __context = &context{}
+
 type context struct {
-	fileConfigs  generic.Map[string, []Config]
-	fileContents generic.Cache[string, map[string]any]
+	fileConfigs      map[string][]Config
+	fileConfigsLock  sync.RWMutex
+	fileContents     map[string]map[string]any
+	fileContentsLock sync.RWMutex
 }
 
-func (c *context) GetConfig(filename string, path string, cfg any) error {
+func (c *context) GetConfig(filename string, cfg any, paths ...string) error {
 	fn, oserr := filepath.Abs(filename)
 	if oserr != nil {
 		return oserr
 	}
 
-	fileMap, cerr := c.fileContents.GetOrLoad(fn, func(absFilename string) (map[string]any, error) {
-		// Load absFilename and parse it into map[string]any using the yml library
-		buf, err := os.ReadFile(absFilename)
+	c.fileContentsLock.RLock()
+	fileMap, ok := c.fileContents[fn]
+	c.fileContentsLock.RUnlock()
+
+	if !ok {
+		buf, err := os.ReadFile(fn)
 		if err != nil && !os.IsNotExist(err) {
-			return nil, err
+			return err
 		}
 
-		var data map[string]any
-		if err = yaml.Unmarshal(buf, &data); err != nil {
-			return nil, err
+		if err = yaml.Unmarshal(buf, &fileMap); err != nil {
+			return err
 		}
 
-		return data, nil
-	})
-
-	if cerr != nil {
-		return cerr
+		c.fileContentsLock.Lock()
+		c.fileContents[fn] = fileMap
+		c.fileContentsLock.Unlock()
 	}
 
-	if len(path) > 0 {
-		if pathFileMap, ok := fileMap[path]; ok {
-			return structure.Map(pathFileMap, cfg)
+	if len(paths) > 0 {
+		var lastPathValue any
+		for _, path := range paths {
+			if pathFileMap, ok := fileMap[path]; ok {
+				lastPathValue = pathFileMap
+
+				if pathFileMap != nil {
+					if fileMap, ok = pathFileMap.(map[string]any); ok {
+						continue
+					}
+				}
+
+				break
+			} else {
+				lastPathValue = nil
+			}
+		}
+
+		if lastPathValue != nil {
+			return structure.Map(lastPathValue, cfg)
 		}
 	} else {
 		return structure.Map(fileMap, cfg)

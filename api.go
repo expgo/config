@@ -8,6 +8,12 @@ import (
 )
 
 type Config interface {
+	Commit(to map[string]any) bool
+	Verify(to map[string]any) error
+}
+
+func Modify[T any](path string, modFunc func(cfg *T)) {
+
 }
 
 var _defaultConfigFileName = "app.yml"
@@ -35,7 +41,7 @@ func SetDefault(filename string, cfg any) error {
 	return nil
 }
 
-func SetDefaultFilename(filename string) error {
+func DefaultFile(filename string) error {
 	if len(filename) == 0 {
 		return errors.New("filename must not be empty")
 	}
@@ -49,15 +55,18 @@ func SetDefaultFilename(filename string) error {
 	return nil
 }
 
-// New create config with default config file
-func New[T Config](path string) (*T, error) {
-	cfg := factory.New[T]()
-	err := __context.GetConfig(_defaultConfigFileName, path, cfg)
-	return cfg, err
+func WatchFile(filename string, paths ...string) error {
+
+	return nil
 }
 
-func NewWithFile[T Config](filename string, path string) (*T, error) {
+// New create config with default config file
+func New[T any](paths ...string) (*T, error) {
 	cfg := factory.New[T]()
-	err := __context.GetConfig(filename, path, cfg)
-	return cfg, err
+	return cfg, __context.GetConfig(_defaultConfigFileName, cfg, paths...)
+}
+
+func NewWithFile[T any](filename string, paths ...string) (*T, error) {
+	cfg := factory.New[T]()
+	return cfg, __context.GetConfig(filename, cfg, paths...)
 }
