@@ -1,8 +1,6 @@
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
-github.com/expgo/factory v0.0.0-20240506075803-c502866fd471 h1:RZN9Vq4sa0EE+tfs4KEb0B9w4EP7Z9lNC0Mi35xAa4I=
-github.com/expgo/factory v0.0.0-20240506075803-c502866fd471/go.mod h1:YTT85dMAqW8ctqizX4OS9fRF3TAe9xQPoh8TnSG0ylY=
-github.com/expgo/generic v0.0.0-20240415070051-4357d19d9b70 h1:u8uBpXKlOBFydfKtzBgZEUG58oc+WvhfGmkIO3As/7c=
-github.com/expgo/generic v0.0.0-20240415070051-4357d19d9b70/go.mod h1:Q3Y49UmlJcsKsmbWI6VA4+Z+N66PfJcSOPM+XC/N1y8=
+github.com/expgo/factory v0.0.0-20240506101817-8a6fa2281886 h1:5SpYU1W6hpMijH0gsOmTgL5SfZvSGQuYxJFrH8Dxd6c=
+github.com/expgo/factory v0.0.0-20240506101817-8a6fa2281886/go.mod h1:YTT85dMAqW8ctqizX4OS9fRF3TAe9xQPoh8TnSG0ylY=
 github.com/expgo/structure v0.0.0-20240430162200-172eb0aa3964 h1:0rxwAopHSYIfm/lyHtf4/ZM4NWB/Q1TKxxyHuaSyxIg=
 github.com/expgo/structure v0.0.0-20240430162200-172eb0aa3964/go.mod h1:tsjqeBHjL+mbqq0OtKdvEqGXAlZpSCzJjFipV9gW/QI=
 github.com/expgo/sync v0.0.0-20240416034417-7c4de7477076 h1:uLKBth5y/qhVR+rtKzdhCHFJRPJ8LENkc/f4LjJeOKk=
