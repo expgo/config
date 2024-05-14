@@ -1,7 +1,7 @@
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/expgo/structure v0.0.0-20240430162200-172eb0aa3964 h1:0rxwAopHSYIfm/lyHtf4/ZM4NWB/Q1TKxxyHuaSyxIg=
-github.com/expgo/structure v0.0.0-20240430162200-172eb0aa3964/go.mod h1:tsjqeBHjL+mbqq0OtKdvEqGXAlZpSCzJjFipV9gW/QI=
+github.com/expgo/structure v0.0.0-20240514103123-d1c7aa6c4ff5 h1:4zER+AzRkTeaiFWUeirWG3cejPz95VkQoAucGHb/4zE=
+github.com/expgo/structure v0.0.0-20240514103123-d1c7aa6c4ff5/go.mod h1:tsjqeBHjL+mbqq0OtKdvEqGXAlZpSCzJjFipV9gW/QI=
 github.com/expgo/sync v0.0.0-20240416034417-7c4de7477076 h1:uLKBth5y/qhVR+rtKzdhCHFJRPJ8LENkc/f4LjJeOKk=
 github.com/expgo/sync v0.0.0-20240416034417-7c4de7477076/go.mod h1:xsnlCFzkJVsSErRFz2usJhsbY6p6txA7L/rj2XgWyNI=
 github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
