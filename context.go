@@ -148,13 +148,3 @@ func (c *context) getConfig(cfg any, paths ...string) error {
 
 	return nil
 }
-
-func (c *context) setConfig(cfg any, paths ...string) error {
-	var fileMap map[string]any
-
-	if err := structure.Map(cfg, &fileMap); err != nil {
-		return err
-	}
-
-	return c.updateConfigTree(fileMap, paths...)
-}

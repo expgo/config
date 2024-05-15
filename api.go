@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"github.com/expgo/structure"
 	"gopkg.in/yaml.v3"
 	"os"
 	"reflect"
@@ -52,8 +53,8 @@ func ReadInConfig() error {
 
 func GetConfig(cfg any, paths ...string) error {
 	cfgType := reflect.TypeOf(cfg)
-	if cfgType.Kind() != reflect.Ptr || cfgType.Elem().Kind() != reflect.Struct {
-		return errors.New("config must be a point struct")
+	if !(cfgType.Kind() == reflect.Ptr && (cfgType.Elem().Kind() == reflect.Struct || cfgType.Elem().Kind() == reflect.Map)) {
+		return errors.New("config must be a point struct or point map")
 	}
 
 	if err := __context.readInConfig(); err != nil {
@@ -65,9 +66,16 @@ func GetConfig(cfg any, paths ...string) error {
 
 func SetConfig(cfg any, paths ...string) error {
 	cfgType := reflect.TypeOf(cfg)
-	if cfgType.Kind() != reflect.Ptr || cfgType.Elem().Kind() != reflect.Struct {
-		return errors.New("config must be a point struct")
+	if !((cfgType.Kind() == reflect.Ptr && cfgType.Elem().Kind() == reflect.Struct) || cfgType.Kind() == reflect.Map) {
+		return errors.New("config must be a point struct or map")
 	}
 
-	return __context.setConfig(cfg, paths...)
+	if fileMap, ok := cfg.(map[string]any); ok {
+		return __context.updateConfigTree(fileMap, paths...)
+	} else {
+		if err := structure.Map(cfg, &fileMap); err != nil {
+			return err
+		}
+		return __context.updateConfigTree(fileMap, paths...)
+	}
 }
