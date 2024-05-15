@@ -31,6 +31,40 @@ type context struct {
 	once           sync.Once
 }
 
+func (c *context) updateConfigTree(fileMap map[string]any, paths ...string) error {
+	c.configTreeLock.Lock()
+	defer c.configTreeLock.Unlock()
+
+	if len(paths) > 0 {
+		configTreeMap := c.configTree
+		var lastConfigMapParent map[string]any
+
+		for i, path := range paths {
+			lastConfigMapParent = configTreeMap
+
+			if lastPathValue, ok := configTreeMap[path]; ok {
+				if ctm, ok1 := lastPathValue.(map[string]any); ok1 {
+					configTreeMap = ctm
+				} else {
+					return fmt.Errorf("path '%s' already exists, but not map[string]any type", strings.Join(paths[:i+1], "."))
+				}
+			} else {
+				configTreeMap[path] = map[string]any{}
+				configTreeMap = configTreeMap[path].(map[string]any)
+			}
+		}
+
+		if err := structure.Map(fileMap, &configTreeMap); err != nil {
+			return err
+		}
+
+		lastConfigMapParent[paths[len(paths)-1]] = configTreeMap
+		return nil
+	} else {
+		return structure.Map(fileMap, &c.configTree)
+	}
+}
+
 func (c *context) parseConfigFile(filename string, paths ...string) error {
 	absFilePath, err := filepath.Abs(filename)
 	if err != nil {
@@ -51,37 +85,7 @@ func (c *context) parseConfigFile(filename string, paths ...string) error {
 		return fmt.Errorf("unmarshal file '%s' err: %v", filename, err)
 	}
 
-	c.configTreeLock.Lock()
-	defer c.configTreeLock.Unlock()
-
-	if len(paths) > 0 {
-		configTreeMap := c.configTree
-		var lastConfigMapParent map[string]any
-
-		for i, path := range paths {
-			lastConfigMapParent = configTreeMap
-
-			if lastPathValue, ok := configTreeMap[path]; ok {
-				if ctm, ok1 := lastPathValue.(map[string]any); ok1 {
-					configTreeMap = ctm
-				} else {
-					return fmt.Errorf("parse '%s' err. path '%s' already exists, but not map[string]any type", filename, strings.Join(paths[:i+1], "."))
-				}
-			} else {
-				configTreeMap[path] = map[string]any{}
-				configTreeMap = configTreeMap[path].(map[string]any)
-			}
-		}
-
-		if err = structure.Map(fileMap, &configTreeMap); err != nil {
-			return err
-		}
-
-		lastConfigMapParent[paths[len(paths)-1]] = configTreeMap
-		return nil
-	} else {
-		return structure.Map(fileMap, &c.configTree)
-	}
+	return c.updateConfigTree(fileMap, paths...)
 }
 
 func (c *context) addFile(filename string, paths ...string) {
@@ -143,4 +147,14 @@ func (c *context) getConfig(cfg any, paths ...string) error {
 	}
 
 	return nil
+}
+
+func (c *context) setConfig(cfg any, paths ...string) error {
+	var fileMap map[string]any
+
+	if err := structure.Map(cfg, &fileMap); err != nil {
+		return err
+	}
+
+	return c.updateConfigTree(fileMap, paths...)
 }
