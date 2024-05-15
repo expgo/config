@@ -48,7 +48,7 @@ func (c *context) parseConfigFile(filename string, paths ...string) error {
 	var fileMap map[string]any
 
 	if err = yaml.Unmarshal(buf, &fileMap); err != nil {
-		return err
+		return fmt.Errorf("unmarshal file '%s' err: %v", filename, err)
 	}
 
 	c.configTreeLock.Lock()
