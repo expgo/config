@@ -56,5 +56,9 @@ func GetConfig(cfg any, paths ...string) error {
 		return errors.New("config must be a point struct")
 	}
 
+	if err := __context.readInConfig(); err != nil {
+		return err
+	}
+
 	return __context.getConfig(cfg, paths...)
 }

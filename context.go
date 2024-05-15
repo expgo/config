@@ -15,6 +15,7 @@ var __context = &context{
 	configsLock:    sync.NewRWMutex(),
 	configTree:     map[string]any{},
 	configTreeLock: sync.NewRWMutex(),
+	once:           sync.NewOnce(),
 }
 
 type pathConfig struct {
@@ -27,6 +28,7 @@ type context struct {
 	configsLock    sync.RWMutex
 	configTree     map[string]any
 	configTreeLock sync.RWMutex
+	once           sync.Once
 }
 
 func (c *context) parseConfigFile(filename string, paths ...string) error {
@@ -36,7 +38,10 @@ func (c *context) parseConfigFile(filename string, paths ...string) error {
 	}
 
 	buf, err := os.ReadFile(absFilePath)
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return err
 	}
 
@@ -87,20 +92,22 @@ func (c *context) addFile(filename string, paths ...string) {
 }
 
 func (c *context) readInConfig() error {
-	if err := c.parseConfigFile(_defaultConfigFileName); err != nil {
-		return err
-	}
-
-	c.configsLock.RLock()
-	defer c.configsLock.RUnlock()
-
-	for _, config := range c.configs {
-		if err := c.parseConfigFile(config.filename, config.paths...); err != nil {
+	return c.once.Do(func() error {
+		if err := c.parseConfigFile(_defaultConfigFileName); err != nil {
 			return err
 		}
-	}
 
-	return nil
+		c.configsLock.RLock()
+		defer c.configsLock.RUnlock()
+
+		for _, config := range c.configs {
+			if err := c.parseConfigFile(config.filename, config.paths...); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func (c *context) getConfig(cfg any, paths ...string) error {
