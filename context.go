@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"github.com/expgo/structure"
 	"github.com/expgo/sync"
@@ -28,19 +27,6 @@ type context struct {
 	configsLock    sync.RWMutex
 	configTree     map[string]any
 	configTreeLock sync.RWMutex
-}
-
-func checkFilenameValid(filename string) error {
-	if len(filename) == 0 {
-		return errors.New("filename must not be empty")
-	}
-
-	// Determine whether the file exists
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		return errors.New("file does not exist")
-	}
-
-	return nil
 }
 
 func (c *context) parseConfigFile(filename string, paths ...string) error {
@@ -93,15 +79,26 @@ func (c *context) parseConfigFile(filename string, paths ...string) error {
 	}
 }
 
-func (c *context) addPathConfig(filename string, paths ...string) error {
+func (c *context) addFile(filename string, paths ...string) {
 	c.configsLock.Lock()
 	defer c.configsLock.Unlock()
 
-	if err := checkFilenameValid(filename); err != nil {
+	c.configs = append(c.configs, pathConfig{paths: paths, filename: filename})
+}
+
+func (c *context) readInConfig() error {
+	if err := c.parseConfigFile(_defaultConfigFileName); err != nil {
 		return err
 	}
 
-	c.configs = append(c.configs, pathConfig{paths: paths, filename: filename})
+	c.configsLock.RLock()
+	defer c.configsLock.RUnlock()
+
+	for _, config := range c.configs {
+		if err := c.parseConfigFile(config.filename, config.paths...); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

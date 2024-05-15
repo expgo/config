@@ -14,8 +14,8 @@ type Config interface {
 
 var _defaultConfigFileName = "app.yml"
 
-// SaveFileIfNotExist if file not exists, create file by cfg struct, then set file to default config file
-func SaveFileIfNotExist(filename string, cfg any) error {
+// SaveIfNotExist if file not exists, create file by cfg struct, then set file to default config file
+func SaveIfNotExist(filename string, cfg any) error {
 	if len(filename) == 0 {
 		return errors.New("filename must not be empty")
 	}
@@ -36,24 +36,21 @@ func SaveFileIfNotExist(filename string, cfg any) error {
 	return nil
 }
 
-func DefaultFile(filename string) error {
-	if err := checkFilenameValid(filename); err != nil {
-		return err
+func DefaultFile(filename string) {
+	if len(filename) > 0 {
+		_defaultConfigFileName = filename
 	}
-
-	_defaultConfigFileName = filename
-	return nil
 }
 
-func BuildConfigTree() error {
-	return nil
+func AddFile(filename string, paths ...string) {
+	__context.addFile(filename, paths...)
 }
 
-func BindFile(filename string, paths ...string) error {
-	return __context.addPathConfig(filename, paths...)
+func ReadInConfig() error {
+	return __context.readInConfig()
 }
 
-func BindConfig(cfg any, paths ...string) error {
+func GetConfig(cfg any, paths ...string) error {
 	cfgType := reflect.TypeOf(cfg)
 	if cfgType.Kind() != reflect.Ptr || cfgType.Elem().Kind() != reflect.Struct {
 		return errors.New("config must be a point struct")
