@@ -13,6 +13,8 @@ type Config interface {
 	Verify(to map[string]any) error
 }
 
+var ERROR_PATH = errors.New("must set at least one path")
+
 var _defaultConfigFileName = "app.yml"
 
 // SaveIfNotExist if file not exists, create file by cfg struct, then set file to default config file
@@ -78,4 +80,28 @@ func SetConfig(cfg any, paths ...string) error {
 		}
 		return __context.updateConfigTree(fileMap, paths...)
 	}
+}
+
+func GetValue(paths ...string) (any, error) {
+	if len(paths) == 0 {
+		return nil, ERROR_PATH
+	}
+
+	return __context.getValue(paths...)
+}
+
+func SetValue(value any, paths ...string) error {
+	if len(paths) == 0 {
+		return ERROR_PATH
+	}
+
+	return __context.setValue(value, paths...)
+}
+
+func MustGet(paths ...string) any {
+	ret, err := GetValue(paths...)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }

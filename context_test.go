@@ -40,3 +40,15 @@ func TestParseConfigFile(t *testing.T) {
 	err = __context.parseConfigFile("test-log-ext.yml", "test", "logbool")
 	assert.Equal(t, errors.New("parse 'test-log-ext.yml' err. path 'test.logbool' already exists, but not map[string]any type"), err)
 }
+
+func TestSetAndGetValue(t *testing.T) {
+	err := __context.setValue(true, "my", "test", "bool")
+	assert.Nil(t, err)
+	assert.Equal(t, true, MustGet("my", "test", "bool"))
+
+	err = __context.setValue(12, "my", "test", "bool", "int")
+	assert.Error(t, errors.New("path 'my.test.bool' already exists, but not map[string]any type"), err)
+
+	_, err = __context.getValue("my", "test", "bool", "int")
+	assert.Error(t, errors.New("path 'my.test.bool' must be map[string]any"), err)
+}

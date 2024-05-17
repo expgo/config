@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"github.com/expgo/structure"
 	"github.com/expgo/sync"
@@ -146,5 +147,56 @@ func (c *context) getConfig(cfg any, paths ...string) error {
 		return structure.Map(c.configTree, cfg)
 	}
 
+	return nil
+}
+
+func (c *context) getValue(paths ...string) (any, error) {
+	c.configTreeLock.RLock()
+	defer c.configTreeLock.RUnlock()
+
+	fileMap := c.configTree
+	for i, path := range paths {
+		if fileMap != nil {
+			if pathValue, ok := fileMap[path]; ok {
+				if fileMap, ok = pathValue.(map[string]any); !ok {
+					if i == (len(paths) - 1) {
+						return pathValue, nil
+					} else {
+						return nil, fmt.Errorf("path '%s' must be map[string]any", strings.Join(paths[:len(paths)-1], "."))
+					}
+				}
+			} else {
+				return nil, errors.New("path not found")
+			}
+		} else {
+			return nil, errors.New("path not found")
+		}
+	}
+	return fileMap, nil
+}
+
+func (c *context) setValue(value any, paths ...string) error {
+	c.configTreeLock.Lock()
+	defer c.configTreeLock.Unlock()
+
+	configTreeMap := c.configTree
+	var lastConfigMapParent map[string]any
+
+	for i, path := range paths {
+		lastConfigMapParent = configTreeMap
+
+		if lastPathValue, ok := configTreeMap[path]; ok {
+			if ctm, ok1 := lastPathValue.(map[string]any); ok1 {
+				configTreeMap = ctm
+			} else {
+				return fmt.Errorf("path '%s' already exists, but not map[string]any type", strings.Join(paths[:i+1], "."))
+			}
+		} else {
+			configTreeMap[path] = map[string]any{}
+			configTreeMap = configTreeMap[path].(map[string]any)
+		}
+	}
+
+	lastConfigMapParent[paths[len(paths)-1]] = value
 	return nil
 }
