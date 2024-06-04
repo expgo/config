@@ -32,6 +32,57 @@ type context struct {
 	once           sync.Once
 }
 
+func isTestProcess() bool {
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, "-test.") {
+			return true
+		}
+	}
+	return false
+}
+
+func fileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return err == nil
+}
+
+func getAbsPath(filename string) (string, error) {
+	if isTestProcess() {
+		if filepath.IsAbs(filename) {
+			return filename, nil
+		} else {
+			// if direct abs file exist, return it
+			absFilePath, err := filepath.Abs(filename)
+			if err != nil {
+				return "", err
+			}
+			if fileExists(absFilePath) {
+				return absFilePath, nil
+			}
+
+			// search go.mod to find project root dir
+			projectPath := filepath.Dir(absFilePath)
+			for {
+				if _, err = os.Stat(filepath.Join(projectPath, "go.mod")); err == nil {
+					break
+				}
+				projectPath = filepath.Dir(projectPath)
+				if projectPath == "/" || projectPath == "." {
+					// not find go.mod, return absFilePath
+					return absFilePath, nil
+				}
+			}
+
+			return filepath.Join(projectPath, filename), nil
+		}
+	} else {
+		return filepath.Abs(filename)
+	}
+}
+
 func (c *context) updateConfigTree(fileMap map[string]any, paths ...string) error {
 	c.configTreeLock.Lock()
 	defer c.configTreeLock.Unlock()
@@ -67,7 +118,7 @@ func (c *context) updateConfigTree(fileMap map[string]any, paths ...string) erro
 }
 
 func (c *context) parseConfigFile(filename string, paths ...string) error {
-	absFilePath, err := filepath.Abs(filename)
+	absFilePath, err := getAbsPath(filename)
 	if err != nil {
 		return err
 	}
