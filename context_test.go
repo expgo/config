@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/stretchr/testify/assert"
-	"log"
 	"testing"
 )
 
@@ -33,7 +32,7 @@ func TestParseConfigFile(t *testing.T) {
 
 	jsonData, err := json.Marshal(__context.configTree)
 	if err != nil {
-		log.Fatalf("JSON marshaling failed: %s", err)
+		t.Fatalf("JSON marshaling failed: %s", err)
 	}
 	assert.Equal(t, "{\"age\":5,\"env\":\"dev\",\"freq\":1000,\"test\":{\"logbool\":true,\"logext\":\"ttt\",\"logging\":{\"name\":\"abc\",\"size\":10}}}", string(jsonData))
 
