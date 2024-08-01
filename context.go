@@ -12,11 +12,17 @@ import (
 )
 
 var __context = &context{
-	configs:        []pathConfig{},
-	configsLock:    sync.NewRWMutex(),
-	configTree:     map[string]any{},
-	configTreeLock: sync.NewRWMutex(),
-	once:           sync.NewOnce(),
+	configs:          []pathConfig{},
+	configsLock:      sync.NewRWMutex(),
+	configTree:       map[string]any{},
+	configTreeLock:   sync.NewRWMutex(),
+	once:             sync.NewOnce(),
+	loadedFiles:      map[string][]string{},
+	loadedFilesLock:  sync.NewMutex(),
+	fileWatchers:     []FileWatcher{},
+	fileWatchersLock: sync.NewMutex(),
+	pathWatchers:     map[string][]PathWatcher{},
+	pathWatchersLock: sync.NewMutex(),
 }
 
 type pathConfig struct {
@@ -25,11 +31,17 @@ type pathConfig struct {
 }
 
 type context struct {
-	configs        []pathConfig
-	configsLock    sync.RWMutex
-	configTree     map[string]any
-	configTreeLock sync.RWMutex
-	once           sync.Once
+	configs          []pathConfig
+	configsLock      sync.RWMutex
+	configTree       map[string]any
+	configTreeLock   sync.RWMutex
+	once             sync.Once
+	loadedFiles      map[string][]string
+	loadedFilesLock  sync.Mutex
+	fileWatchers     []FileWatcher
+	fileWatchersLock sync.Mutex
+	pathWatchers     map[string][]PathWatcher
+	pathWatchersLock sync.Mutex
 }
 
 func isTestProcess() bool {
@@ -83,6 +95,27 @@ func getAbsPath(filename string) (string, error) {
 	}
 }
 
+func (c *context) mergeTrees(map1, map2 map[string]any) map[string]any {
+	result := make(map[string]any)
+	for k, v := range map1 {
+		if vMap1, ok := v.(map[string]any); ok {
+			if vMap2, ok := map2[k].(map[string]any); ok {
+				result[k] = c.mergeTrees(vMap1, vMap2)
+			} else {
+				result[k] = v
+			}
+		} else {
+			result[k] = v
+		}
+	}
+	for k, v := range map2 {
+		if _, ok := map1[k]; !ok {
+			result[k] = v
+		}
+	}
+	return result
+}
+
 func (c *context) updateConfigTree(fileMap map[string]any, paths ...string) error {
 	c.configTreeLock.Lock()
 	defer c.configTreeLock.Unlock()
@@ -106,14 +139,11 @@ func (c *context) updateConfigTree(fileMap map[string]any, paths ...string) erro
 			}
 		}
 
-		if err := structure.Map(fileMap, &configTreeMap); err != nil {
-			return err
-		}
-
-		lastConfigMapParent[paths[len(paths)-1]] = configTreeMap
+		lastConfigMapParent[paths[len(paths)-1]] = c.mergeTrees(fileMap, c.configTree)
 		return nil
 	} else {
-		return structure.Map(fileMap, &c.configTree)
+		c.configTree = c.mergeTrees(fileMap, c.configTree)
+		return nil
 	}
 }
 
@@ -123,7 +153,22 @@ func (c *context) parseConfigFile(filename string, paths ...string) error {
 		return err
 	}
 
-	buf, err := os.ReadFile(absFilePath)
+	if !fileExists(absFilePath) {
+		return nil
+	}
+
+	c.loadedFilesLock.Lock()
+	c.loadedFiles[absFilePath] = paths
+	for _, fw := range c.fileWatchers {
+		fw.WatchFile(absFilePath)
+	}
+	c.loadedFilesLock.Unlock()
+
+	return c.loadConfigToTree(absFilePath, paths...)
+}
+
+func (c *context) loadConfigToTree(filename string, paths ...string) error {
+	buf, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
